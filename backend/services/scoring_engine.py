@@ -22,36 +22,38 @@ def get_sentiment(text: str):
     if not text or not isinstance(text, str): return 0.0
     return sia.polarity_scores(text)['compound']
 
-def engineer_features(yf_data: dict, market_sentiment: float, news_data: list):
+def engineer_features(yf_data: dict, market_sentiment: float, fred_data: pd.Series, news_data: list):
     if 'historical_data' not in yf_data or not yf_data['historical_data']: return pd.DataFrame()
     stock_df = pd.DataFrame.from_dict(yf_data['historical_data'], orient='index')
-    stock_df.index = pd.to_datetime(stock_df.index, utc=True)
+    stock_df.index = pd.to_datetime(stock_df.index)
     close_prices = pd.to_numeric(stock_df['Close'], errors='coerce')
     stock_df['Close_raw'] = close_prices
-    stock_df['price_change_pct_7d'] = close_prices.pct_change(periods=7).fillna(0) * 100
-    stock_df['price_change_pct_30d'] = close_prices.pct_change(periods=30).fillna(0) * 100
-    stock_df['price_change_pct_90d'] = close_prices.pct_change(periods=90).fillna(0) * 100
-    stock_df['volatility_30d'] = close_prices.rolling(window=30).std().fillna(0)
-    stock_df['volatility_90d'] = close_prices.rolling(window=90).std().fillna(0)
-    delta = close_prices.diff(); gain = delta.clip(lower=0).fillna(0); loss = -delta.clip(upper=0).fillna(0)
-    avg_gain = gain.rolling(window=14, min_periods=1).mean(); avg_loss = loss.rolling(window=14, min_periods=1).mean()
+    if fred_data is not None:
+        fred_df = pd.DataFrame(fred_data, columns=['treasury_rate_10y'])
+        fred_df.index = pd.to_datetime(fred_df.index)
+        stock_df = pd.merge(stock_df, fred_df, left_index=True, right_index=True, how='left')
+        stock_df['treasury_rate_10y'].ffill(inplace=True)
+        stock_df['treasury_rate_change_30d'] = stock_df['treasury_rate_10y'].diff(periods=30).fillna(0)
+    else:
+        stock_df['treasury_rate_change_30d'] = 0
+    stock_df['price_change_pct_7d'] = close_prices.pct_change(periods=7).fillna(0) * 100; stock_df['price_change_pct_30d'] = close_prices.pct_change(periods=30).fillna(0) * 100; stock_df['price_change_pct_90d'] = close_prices.pct_change(periods=90).fillna(0) * 100
+    stock_df['volatility_30d'] = close_prices.rolling(window=30).std().fillna(0); stock_df['volatility_90d'] = close_prices.rolling(window=90).std().fillna(0)
+    delta = close_prices.diff(); gain = delta.clip(lower=0).fillna(0); loss = -delta.clip(upper=0).fillna(0); avg_gain = gain.rolling(window=14, min_periods=1).mean(); avg_loss = loss.rolling(window=14, min_periods=1).mean()
     rs = avg_gain / avg_loss.replace(0, np.nan); stock_df['rsi_14d'] = 100 - (100 / (1 + rs)); stock_df['rsi_14d'] = stock_df['rsi_14d'].fillna(50)
     stock_df['ma_90d'] = close_prices.rolling(window=90).mean(); stock_df['price_to_ma_ratio'] = close_prices / stock_df['ma_90d']
     stock_df['market_sentiment_90d'] = market_sentiment
     avg_sentiment, news_volume, negative_event_count = 0.0, 0, 0
     if news_data:
-        news_volume = len(news_data)
-        sentiments = [get_sentiment(article.get('title')) for article in news_data if article.get('title')]
+        news_volume = len(news_data); sentiments = [get_sentiment(article.get('title')) for article in news_data if article.get('title')]
         if sentiments: avg_sentiment = np.mean(sentiments)
         negative_keywords = ['downgrade', 'lawsuit', 'fraud', 'restructuring', 'crisis', 'investigation', 'scandal', 'debt']
         for article in news_data:
             title = article.get('title', '').lower()
             if any(keyword in title for keyword in negative_keywords): negative_event_count += 1
     stock_df['avg_news_sentiment_30d'] = avg_sentiment; stock_df['news_volume_30d'] = news_volume; stock_df['negative_event_count'] = negative_event_count
-    info = yf_data.get('info', {}); stock_df['trailingPE'] = info.get('trailingPE')
-    stock_df['dividendYield'] = (info.get('dividendYield') or 0) * 100
+    info = yf_data.get('info', {}); stock_df['trailingPE'] = info.get('trailingPE'); stock_df['dividendYield'] = (info.get('dividendYield') or 0) * 100
     stock_df['debt_to_equity'] = info.get('debtToEquity'); stock_df['cash_per_share'] = info.get('totalCashPerShare')
-    feature_columns = ['Close_raw', 'price_change_pct_7d', 'price_change_pct_30d', 'price_change_pct_90d', 'volatility_30d', 'volatility_90d', 'rsi_14d', 'price_to_ma_ratio', 'market_sentiment_90d', 'avg_news_sentiment_30d', 'news_volume_30d', 'negative_event_count', 'trailingPE', 'dividendYield', 'debt_to_equity', 'cash_per_share']
+    feature_columns = ['Close_raw', 'price_change_pct_7d', 'price_change_pct_30d', 'price_change_pct_90d', 'volatility_30d', 'volatility_90d', 'rsi_14d', 'price_to_ma_ratio', 'market_sentiment_90d', 'treasury_rate_change_30d', 'avg_news_sentiment_30d', 'news_volume_30d', 'negative_event_count', 'trailingPE', 'dividendYield', 'debt_to_equity', 'cash_per_share']
     features = stock_df[feature_columns].copy()
     features.replace([np.inf, -np.inf], 0, inplace=True); features.fillna({'price_to_ma_ratio': 1.0}, inplace=True); features.fillna(0, inplace=True) 
     return features
@@ -79,14 +81,12 @@ def get_heuristic_assessment(features: pd.DataFrame, yf_data: dict) -> dict:
     logging.info("ML model training failed. Generating heuristic assessment.")
     score, explanation = get_fundamental_score(yf_data)
     latest_sentiment = features['avg_news_sentiment_30d'].iloc[-1]
-    return {"stability_score": "N/A", "explanation": explanation, "assessment_type": "Heuristic", "latest_sentiment": latest_sentiment}
+    return {"stability_score": "N/A", "explanation": explanation, "assessment_type": "Heuristic", "latest_sentiment": latest_sentiment, "all_features": features.to_dict(orient='index')}
 
 def train_technical_model(features: pd.DataFrame, ticker: str):
-    # This function's logic remains the same, as it correctly trains the specialist technical model
     model_path = os.path.join(MODEL_DIR, f"xgb_scorer_{ticker}.joblib")
     logging.info(f"Starting final training for {ticker} with composite risk target...")
-    features['future_volatility_30d'] = features['Close_raw'].rolling(window=30).std().shift(-30)
-    features['future_return_30d'] = (features['Close_raw'].shift(-30) / features['Close_raw']) - 1
+    features['future_volatility_30d'] = features['Close_raw'].rolling(window=30).std().shift(-30); features['future_return_30d'] = (features['Close_raw'].shift(-30) / features['Close_raw']) - 1
     stock_volatility_avg = features['volatility_30d'].mean()
     is_negative_return = features['future_return_30d'] < -0.05
     is_high_volatility = features['future_volatility_30d'] > stock_volatility_avg
@@ -94,7 +94,7 @@ def train_technical_model(features: pd.DataFrame, ticker: str):
     features.dropna(inplace=True) 
     if len(features) < 100 or features['target'].nunique() < 2:
         logging.warning("Not enough data or only one class present for robust tuning."); return None
-    technical_feature_cols = ['price_change_pct_7d', 'price_change_pct_30d', 'price_change_pct_90d', 'volatility_30d', 'volatility_90d', 'rsi_14d', 'price_to_ma_ratio', 'market_sentiment_90d', 'avg_news_sentiment_30d', 'news_volume_30d', 'negative_event_count']
+    technical_feature_cols = ['price_change_pct_7d', 'price_change_pct_30d', 'price_change_pct_90d', 'volatility_30d', 'volatility_90d', 'rsi_14d', 'price_to_ma_ratio', 'market_sentiment_90d', 'treasury_rate_change_30d', 'avg_news_sentiment_30d', 'news_volume_30d', 'negative_event_count']
     X = features[technical_feature_cols]; y = features['target']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
     scale_pos_weight = (y_train == 0).sum() / (y_train == 1).sum() if (y_train == 1).sum() > 0 else 1
@@ -113,17 +113,12 @@ def train_technical_model(features: pd.DataFrame, ticker: str):
     logging.info(f"Training final model for {ticker} on all data..."); final_model.fit(X, y)
     joblib.dump(final_model, model_path); logging.info(f"Model for {ticker} trained and saved to {model_path}"); return final_model
 
-# --- ORCHESTRATOR (FINAL CORRECTED LOGIC) ---
-def get_score_and_explanation(ticker: str, yf_data: dict, market_sentiment: float, news_data: list):
-    all_features = engineer_features(yf_data, market_sentiment, news_data)
+def get_score_and_explanation(ticker: str, yf_data: dict, market_sentiment: float, fred_data: pd.Series, news_data: list):
+    all_features = engineer_features(yf_data, market_sentiment, fred_data, news_data)
     if all_features.empty: return {"error": "Could not engineer features."}
 
     latest_sentiment = all_features['avg_news_sentiment_30d'].iloc[-1]
-    
-    # STEP 1: ANCHOR WITH FUNDAMENTAL SCORE
     fundamental_score, fund_explanation = get_fundamental_score(yf_data)
-
-    # STEP 2: LOAD OR TRAIN TECHNICAL MODEL
     model_path = os.path.join(MODEL_DIR, f"xgb_scorer_{ticker}.joblib")
     model = None
     if not os.path.exists(model_path):
@@ -134,32 +129,24 @@ def get_score_and_explanation(ticker: str, yf_data: dict, market_sentiment: floa
     if model is None:
         return get_heuristic_assessment(all_features, yf_data)
 
-    # STEP 3: CALCULATE TECHNICAL PENALTY
     technical_feature_cols = model.get_booster().feature_names
     latest_tech_features = all_features[technical_feature_cols].iloc[-1:]
     
     risk_probability = model.predict_proba(latest_tech_features)[:, 1][0]
-    technical_penalty = int(risk_probability * 50) # Penalty is 0-50 points
+    technical_penalty = int(risk_probability * 50)
     logging.info(f"Technical model risk probability: {risk_probability:.2f}, resulting in penalty of: {technical_penalty}")
 
-    # STEP 4: CALCULATE FINAL SCORE
     final_score = fundamental_score - technical_penalty
-    final_score = max(0, final_score) # Score cannot be negative
+    final_score = max(0, final_score)
 
-    # STEP 5: GENERATE EXPLANATIONS
-    explainer = shap.TreeExplainer(model)
-    shap_values = explainer.shap_values(latest_tech_features)
+    explainer = shap.TreeExplainer(model); shap_values = explainer.shap_values(latest_tech_features)
     shap_values_for_class_1 = shap_values[0] if len(np.array(shap_values).shape) == 3 else shap_values
     shap_values_flat = shap_values_for_class_1[0]
 
-    feature_names = latest_tech_features.columns
-    feature_values = latest_tech_features.iloc[0].values
+    feature_names = latest_tech_features.columns; feature_values = latest_tech_features.iloc[0].values
     explanation = [{"feature": name, "value": round(float(val), 2), "impact": round(float(shap), 2)} for name, val, shap in zip(feature_names, feature_values, shap_values_flat)]
     
-    # Add fundamental impacts to the explanation list
-    for item in fund_explanation:
-        explanation.append(item)
-        
+    for item in fund_explanation: explanation.append(item)
     explanation.sort(key=lambda x: abs(x['impact']), reverse=True)
     
-    return {"stability_score": final_score, "explanation": explanation, "assessment_type": "ML_Model", "latest_sentiment": latest_sentiment}
+    return {"stability_score": final_score, "technical_score": int((1-risk_probability)*100), "fundamental_score": fundamental_score, "explanation": explanation, "assessment_type": "ML_Model", "latest_sentiment": latest_sentiment, "all_features": all_features.to_dict(orient='index')}
