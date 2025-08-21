@@ -156,114 +156,27 @@ graph TD
 
     %% --- Components ---
     subgraph "User Tier"
-        User[fa:fa-user Analyst]:::userStyle
+        User["fa:fa-user Analyst"]:::userStyle
     end
 
     subgraph "Frontend Tier (Streamlit Cloud)"
-        Frontend[fa:fa-window-maximize Streamlit Dashboard]:::frontendStyle
+        Frontend["fa:fa-window-maximize Streamlit Dashboard"]:::frontendStyle
     end
 
     subgraph "Backend Tier (Docker on Railway)"
-        BackendAPI[fa:fa-server FastAPI Server]:::backendStyle
-        ScoringEngine[fa:fa-cogs Scoring Engine]:::backendStyle
-        DataFetcher[fa:fa-database Data Fetcher]:::backendStyle
+        BackendAPI["fa:fa-server FastAPI Server"]:::backendStyle
+        ScoringEngine["fa:fa-cogs Scoring Engine"]:::backendStyle
+        DataFetcher["fa:fa-database Data Fetcher"]:::backendStyle
     end
 
     subgraph "External Services"
-        ExternalAPIs[fa:fa-cloud-download External APIs <br> (Yahoo Finance, FRED, NewsAPI)]:::apiStyle
+        ExternalAPIs["fa:fa-cloud-download External APIs <br> (Yahoo Finance, FRED, NewsAPI)"]:::apiStyle
     end
 
     %% --- Connections ---
-    User -- Interacts --> Frontend
+    User -- "Interacts" --> Frontend
     Frontend -- "API Request (HTTPS)" --> BackendAPI
-    BackendAPI -- Manages --> DataFetcher
-    BackendAPI -- Manages --> ScoringEngine
-    DataFetcher -- Fetches from --> ExternalAPIs
-```
-
-### Scoring Logic Flowchart
-
-This flowchart details the innovative **"Fundamentals First"** architecture, which is our unique selling proposition. It ensures that every score is anchored in financial reality, preventing the model from developing dangerous biases.
-
-```mermaid
-graph TD
-    %% --- Custom Styling ---
-    classDef inputStyle fill:#3498DB,stroke:#333,color:#fff
-    classDef processStyle fill:#2ECC71,stroke:#333,color:#fff
-    classDef modelStyle fill:#8E44AD,stroke:#333,color:#fff
-    classDef finalStyle fill:#E74C3C,stroke:#333,color:#fff
-
-    %% --- Flowchart ---
-    Start((Ticker Request)):::inputStyle --> FundData[Fetch Fundamental Data <br> (Debt, P/E, Cash)]
-    Start --> TechData[Fetch Market & News Data]
-
-    FundData --> FundScore{Calculate Fundamental Score <br> (0-100 Score)}:::processStyle
-    
-    TechData --> TechModel[Load/Train Technical ML Model <br> (XGBoost + Optuna)]:::modelStyle
-    TechModel --> TechRisk{Predict Technical Risk Probability <br> (0.0 to 1.0)}:::modelStyle
-    TechRisk --> TechPenalty[Convert to Technical Penalty <br> (0-50 Points)]:::processStyle
-    
-    FundScore --> FinalCalc[Final Score = <br> Fundamental Score - Technical Penalty]:::finalStyle
-    TechPenalty --> FinalCalc
-    
-    FinalCalc --> Output((Final Stability Score)):::finalStyle
-```
-
-### MLOps - Automated Retraining Flowchart
-
-To ensure our models never become stale, we've implemented a lightweight MLOps pipeline. This process runs in the background, triggered either manually via an API endpoint or on a schedule, to keep our core models up-to-date without any service downtime.
-
-```mermaid
-graph TD
-    %% --- Custom Styling ---
-    classDef triggerStyle fill:#8E44AD,stroke:#333,color:#fff
-    classDef processStyle fill:#3498DB,stroke:#333,color:#fff
-    classDef successStyle fill:#2ECC71,stroke:#333,color:#fff
-
-    %% --- Flowchart ---
-    Trigger((fa:fa-clock-o Start Retraining Job)):::triggerStyle --> Fetch[Fetch Fresh Data for Core Tickers <br> (AAPL, MSFT, etc.)]
-    Fetch --> Engineer[Engineer All Features]:::processStyle
-    Engineer --> Tune[Run Optuna Hyperparameter Tuning]:::processStyle
-    Tune --> Train[Train a New, Optimized Model]:::processStyle
-    Train --> Save[Overwrite Old .joblib File <br> with New Model]:::processStyle
-    Save --> End((fa:fa-check-circle Job Complete)):::successStyle
-```
-
-### Deployment Diagram
-
-The entire application is deployed on modern, scalable cloud infrastructure using a fully containerized approach.
-
-```mermaid
-graph TD
-    %% --- Custom Styling ---
-    classDef userStyle fill:#2ECC71,stroke:#333,color:#fff
-    classDef cloudStyle fill:#ECF0F1,stroke:#bdc3c7
-    classDef containerStyle fill:#3498DB,stroke:#2980B9,color:#fff
-    classDef serviceStyle fill:#9B59B6,stroke:#8E44AD,color:#fff
-
-    %% --- Diagram ---
-    subgraph "User's Machine"
-        Browser[fa:fa-globe Browser]:::userStyle
-    end
-
-    subgraph "Cloud Infrastructure"
-        subgraph "Streamlit Community Cloud"
-            style Streamlit Community Cloud fill:#f0f8ff,stroke:#333,stroke-dasharray: 5 5
-            Frontend[
-                **Streamlit Frontend Service**<br/>
-                `app.py`
-            ]:::serviceStyle
-        end
-
-        subgraph "Railway"
-            style Railway fill:#e6e6fa,stroke:#333,stroke-dasharray: 5 5
-            Backend[
-                **FastAPI Backend Service**<br/>
-                fa:fa-docker Docker Container
-            ]:::containerStyle
-        end
-    end
-    
-    Browser -- "HTTPS" --> Frontend
-    Frontend -- "REST API (HTTPS)" --> Backend
+    BackendAPI -- "Manages" --> DataFetcher
+    BackendAPI -- "Manages" --> ScoringEngine
+    DataFetcher -- "Fetches from" --> ExternalAPIs
 
