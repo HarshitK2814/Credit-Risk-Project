@@ -3,7 +3,22 @@ import requests
 import pandas as pd
 import plotly.express as px
 
+# -------------------------
+# Page Config
+# -------------------------
 st.set_page_config(page_title="CredLens", page_icon="🤖", layout="wide")
+
+# -------------------------
+# Hide Streamlit default UI elements (menu, deploy, footer)
+# -------------------------
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # -------------------------
 # Load Font Awesome
@@ -13,26 +28,21 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------
-# Custom CSS (Toolbar is now visible)
+# Custom CSS
 # -------------------------
 st.markdown("""
     <style>
-    /* Rules that hid the toolbar have been REMOVED from here */
-
-    /* Sidebar button hover */
     .stButton button:hover {
         background-color: #ff3333 !important;
         transform: scale(1.05);
         box-shadow: 0px 4px 12px rgba(255, 0, 0, 0.4);
         transition: all 0.2s ease-in-out;
     }
-    /* Sidebar input hover */
     .stTextInput input:hover {
         border: 2px solid #00c4cc !important;
         box-shadow: 0px 0px 8px rgba(0, 196, 204, 0.6);
         transition: all 0.2s ease-in-out;
     }
-    /* Metric cards styling */
     div[data-testid="stMetric"] {
         background-color: rgba(128, 128, 128, 0.1);
         border-radius: 12px;
@@ -51,21 +61,18 @@ st.markdown("""
         font-size: 1.8em;
         font-weight: 700;
     }
-    /* Chart hover effect */
     .js-plotly-plot:hover {
         transform: scale(1.01);
         transition: all 0.2s ease-in-out;
         box-shadow: 0px 6px 14px rgba(0, 0, 0, 0.1);
         border-radius: 10px;
     }
-    /* News hover effect */
     a:hover {
         color: #00c4cc !important;
         text-decoration: underline;
     }
     </style>
 """, unsafe_allow_html=True)
-
 
 # -------------------------
 # Configurations & Helpers
@@ -77,16 +84,21 @@ def get_api_data(ticker: str):
     """Fetches analysis data from the backend API."""
     try:
         response = requests.get(f"{BACKEND_URL}/{ticker}")
-        if response.status_code == 500:
-            st.error("An unexpected error occurred in the backend.")
-            return None
-        if response.status_code == 404:
-            st.error(f"Could not find data for ticker '{ticker}'.")
-            return None
-        response.raise_for_status()
+        response.raise_for_status() 
         return response.json()
+
+    except requests.exceptions.HTTPError as err:
+        error_data = err.response.json()
+        error_type = error_data.get("type")
+
+        if error_type == 'INVALID_TICKER':
+            st.error(f"Ticker '{ticker}' not found. Please ensure it's a valid US-listed stock and check for spelling errors.")
+        else:
+            st.error("An unexpected error occurred in the backend.")
+        return None
+
     except requests.exceptions.RequestException:
-        st.error("Error connecting to the backend API. Is the backend server running?")
+        st.error("Error connecting to the backend API. Please ensure the server is running.")
         return None
 
 def format_market_cap(mc):
@@ -101,11 +113,9 @@ def format_market_cap(mc):
         return f"${mc/1e6:.2f} M"
     return str(mc)
 
-
 # -------------------------
-# Main UI Layout
+# Main UI Layout and the rest of the file is unchanged...
 # -------------------------
-
 st.markdown("""
     <div style="display: flex; align-items: center; margin-bottom: 1em;">
         <div style="font-size: 2.5em; margin-right: 10px; font-weight: bold;
@@ -122,16 +132,11 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-
 st.sidebar.header("Analysis Options")
 ticker_input = st.sidebar.text_input("Enter Company Ticker", value="SMCI").upper()
 analyze_button = st.sidebar.button("Analyze Creditworthiness", type="primary")
 st.sidebar.info("Enter a stock ticker (e.g., AAPL, SMCI, BA) to get its real-time, explainable stability score.")
 
-
-# -------------------------
-# Main Analysis Section
-# -------------------------
 if analyze_button:
     if not ticker_input:
         st.warning("Please enter a company ticker.")
@@ -144,7 +149,6 @@ if analyze_button:
             info = api_data.get('company_info', {})
             company_name = api_data.get('company_name', ticker_input)
             
-            # Default to light theme for charts - can be customized in the future
             plotly_template = 'plotly_white'
             
             st.header(f"Analysis for {company_name}")
@@ -158,7 +162,6 @@ if analyze_button:
                 else:
                     st.error("🚨 Volatile: Significant downside risk detected.")
             
-            # --- Main Metrics Display ---
             col1, col2, col3, col4, col5 = st.columns(5)
             
             with col1:
@@ -184,7 +187,6 @@ if analyze_button:
 
             st.markdown("---")
 
-            # --- Chart Display ---
             col1, col2 = st.columns((1, 1))
             with col1:
                 st.subheader("Why this score? (Key Drivers)")
@@ -231,7 +233,6 @@ if analyze_button:
             
             st.markdown("---")
             
-            # --- News Display ---
             news = api_data.get('recent_news_for_context')
             if news:
                 st.subheader("Recent News Headlines")
@@ -240,3 +241,12 @@ if analyze_button:
 
 else:
     st.info("Enter a ticker in the sidebar and click 'Analyze' to begin.")
+
+# -------------------------
+# Custom Footer
+# -------------------------
+st.markdown("""
+    <div style='text-align: center; color: gray; font-size: 14px; margin-top: 30px;'>
+        © 2025 CredLens | Hackathon Prototype
+    </div>
+""", unsafe_allow_html=True)
