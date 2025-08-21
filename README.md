@@ -138,46 +138,60 @@ The entire backend is **containerized with Docker** for reproducibility and depl
 🔥 **CredLens is not just another score generator — it’s the future of explainable, real-time credit intelligence.**  
 
 
-## 3. System Architecture & Design
+## ⚙️ 3. System Architecture & Design  
 
-CredLens is built on a modern, decoupled, and scalable architecture designed for real-time performance, resilience, and maintainability. The system is composed of two primary services: a Streamlit frontend for the user interface and a FastAPI backend for all data processing and machine learning logic.
+CredLens is built on a **modern, decoupled, and scalable architecture** designed for:  
+✅ Real-time performance  
+✅ High resilience  
+✅ Easy maintainability  
 
-### High-Level Component Diagram (UML Style)
+It has **two core services**:  
+- 🎨 **Streamlit Frontend** → Interactive dashboard for analysts  
+- 🚀 **FastAPI Backend** → Data processing, ML scoring, and explainability  
 
-This diagram illustrates the main software components and their dependencies.
+---
+
+### 🏗️ High-Level Component Diagram  
+
+The following diagram shows the **main software components** and their dependencies:  
 
 ```mermaid
 graph TD
-    subgraph "User Tier"
-        User[👤 Analyst]
+    %% User Tier
+    subgraph "👤 User Tier"
+        User[Analyst]
     end
 
-    subgraph "Frontend Tier (Streamlit Cloud)"
-        Frontend[🌐 Streamlit Dashboard]
+    %% Frontend
+    subgraph "🌐 Frontend Tier (Streamlit Cloud)"
+        Frontend[Streamlit Dashboard]
     end
 
-    subgraph "Backend Tier (Docker on Railway)"
-        BackendAPI[🚀 FastAPI Server]
+    %% Backend
+    subgraph "🚀 Backend Tier (Docker on Railway)"
+        BackendAPI[FastAPI Server]
         ScoringEngine[🧠 Scoring Engine]
         DataFetcher[📡 Data Fetcher]
         ModelStore[(💾 Model Storage)]
     end
 
-    subgraph "External Services"
-        YFinanceAPI[Yahoo Finance API]
-        FRED_API[FRED API]
-        NewsAPI[NewsAPI]
+    %% External Services
+    subgraph "🌍 External Services"
+        YFinanceAPI[📈 Yahoo Finance API]
+        FRED_API[🏦 FRED API]
+        NewsAPI[📰 News API]
     end
 
-    User -- "Interacts" --> Frontend
-    Frontend -- "API Request (HTTP)" --> BackendAPI
-    BackendAPI -- "Uses" --> DataFetcher
-    BackendAPI -- "Uses" --> ScoringEngine
-    ScoringEngine -- "Loads/Saves Models" --> ModelStore
-    DataFetcher -- "Fetches Data" --> YFinanceAPI
-    DataFetcher -- "Fetches Data" --> FRED_API
-    DataFetcher -- "Fetches Data" --> NewsAPI
-```
+    %% Connections
+    User -->|Interacts| Frontend
+    Frontend -->|API Request (HTTP)| BackendAPI
+    BackendAPI -->|Uses| DataFetcher
+    BackendAPI -->|Uses| ScoringEngine
+    ScoringEngine -->|Loads / Saves Models| ModelStore
+    DataFetcher -->|Fetches| YFinanceAPI
+    DataFetcher -->|Fetches| FRED_API
+    DataFetcher -->|Fetches| NewsAPI
+
 
 ### Data Flow & Sequence Diagram (UML Style)
 
