@@ -178,3 +178,91 @@ graph TD
     DataFetcher -- "Fetches Data" --> FRED_API
     DataFetcher -- "Fetches Data" --> NewsAPI
 ```
+
+### Data Flow & Sequence Diagram (UML Style)
+
+This diagram shows the sequence of events for a typical user request, highlighting our real-time, non-blocking architecture.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant BackendAPI as FastAPI Backend
+    participant BackgroundTask as Async Retraining
+    participant ExternalAPIs as Data Sources
+
+    User->>Frontend: Enters Ticker & Clicks "Analyze"
+    Frontend->>BackendAPI: GET /api/v1/score/{ticker}
+    
+    activate BackendAPI
+    BackendAPI->>ExternalAPIs: Fetch all required data (YFinance, FRED, News)
+    ExternalAPIs-->>BackendAPI: Return fresh data
+    
+    BackendAPI->>BackendAPI: 1. Calculate Fundamental Score
+    BackendAPI->>BackendAPI: 2. Load pre-trained Technical Model
+    BackendAPI->>BackendAPI: 3. Calculate Technical Penalty
+    BackendAPI->>BackendAPI: 4. Compute Final Score & Explanation
+    
+    par
+        BackendAPI-->>Frontend: Return full JSON Response (Instant)
+        and
+        BackendAPI-->>BackgroundTask: Trigger Retraining Job
+    end
+    deactivate BackendAPI
+
+    activate Frontend
+    Frontend->>User: Display Gauges, Charts, and Insights
+    deactivate Frontend
+
+    activate BackgroundTask
+    BackgroundTask->>ExternalAPIs: Re-fetch all fresh data
+    ExternalAPIs-->>BackgroundTask: Return fresh data
+    BackgroundTask->>BackgroundTask: Run Optuna Tuning & Retrain Model
+    BackgroundTask->>BackgroundTask: Save new model to disk
+    deactivate BackgroundTask
+```
+
+### Deployment Diagram (UML Style)
+
+This diagram illustrates the physical (or virtual) nodes where each part of the application is hosted and how they communicate.
+
+```mermaid
+graph TD
+    subgraph "User's Local Machine"
+        Browser[🌐 Web Browser]
+    end
+
+    subgraph "Cloud Infrastructure"
+        subgraph "Streamlit Community Cloud"
+            style Streamlit Community Cloud fill:#f0f8ff,stroke:#333
+            FrontendService[
+                **Frontend Service**<br/>
+                Node: Python Process<br/>
+                Artifact: `app.py`
+            ]
+        end
+
+        subgraph "Railway"
+            style Railway fill:#e6e6fa,stroke:#333
+            BackendService[
+                **Backend Service**<br/>
+                Node: Docker Container<br/>
+                Artifact: `credlens-backend` image
+            ]
+        end
+
+        subgraph "Third-Party APIs"
+            style Third-Party APIs fill:#fafad2,stroke:#333
+            ExternalAPIs[
+                **External Services**<br/>
+                Yahoo Finance<br/>
+                FRED<br/>
+                NewsAPI
+            ]
+        end
+    end
+
+    Browser -- "HTTPS" --> FrontendService
+    FrontendService -- "REST API (HTTPS)" --> BackendService
+    BackendService -- "REST API (HTTPS)" --> ExternalAPIs
+
