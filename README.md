@@ -41,19 +41,15 @@ Instructions:
 * ✅ **Intelligent & Robust Fallbacks:** The system is fully resilient. It gracefully handles API failures and can produce a qualitative, rule-based **Heuristic Assessment** for stocks that cannot be scored by the ML model due to insufficient data.
 * ✅ **Lightweight MLOps Pipeline:** The entire backend is containerized with **Docker** for perfect reproducibility. It includes an API endpoint to trigger automated background retraining of core models, ensuring the system's intelligence stays fresh without any downtime.
 
-## 🏗️3. System Architecture
+## 3. System Architecture & Design
 
 CredLens is built on a modern, decoupled, and scalable architecture designed for real-time performance, resilience, and maintainability. The system is composed of two primary services: a Streamlit frontend for the user interface and a FastAPI backend for all data processing and machine learning logic.
 
-*   **Frontend:** A responsive dashboard built with **Streamlit** and deployed on Streamlit Community Cloud.
-*   **Backend:** A high-performance API server built with **FastAPI** and deployed as a Docker container on Railway.
-*   **ML Engine:** Uses **XGBoost** for the specialized technical model and **Optuna** for efficient, intelligent hyperparameter optimization.
-
-### High-Level Component Diagram
+### High-Level Component Diagram (UML Style)
 
 This diagram illustrates the main software components and their dependencies.
 
-mermaid
+```mermaid
 graph TD
     subgraph "User Tier"
         User[👤 Analyst]
@@ -84,24 +80,13 @@ graph TD
     DataFetcher -- "Fetches Data" --> YFinanceAPI
     DataFetcher -- "Fetches Data" --> FRED_API
     DataFetcher -- "Fetches Data" --> NewsAPI
-
-```
-+------------------+      +---------------------+      +----------------+
-|      User        | ---> |  Streamlit Frontend | <--> |  FastAPI Backend |
-+------------------+      +---------------------+      +----------------+
-                                                           |
-                                     +---------------------+---------------------+
-                                     |                     |                     |
-                               +---------------+   +---------------+   +---------------+
-                               | Yahoo Finance |   |     FRED      |   |    NewsAPI    |
-                               +---------------+   +---------------+   +---------------+
 ```
 
 ### Data Flow & Sequence Diagram (UML Style)
 
 This diagram shows the sequence of events for a typical user request, highlighting our real-time, non-blocking architecture.
 
-mermaid
+```mermaid
 sequenceDiagram
     participant User
     participant Frontend
@@ -138,6 +123,64 @@ sequenceDiagram
     BackgroundTask->>BackgroundTask: Run Optuna Tuning & Retrain Model
     BackgroundTask->>BackgroundTask: Save new model to disk
     deactivate BackgroundTask
+```
+
+### Deployment Diagram (UML Style)
+
+This diagram illustrates the physical (or virtual) nodes where each part of the application is hosted and how they communicate.
+
+```mermaid
+graph TD
+    subgraph "User's Local Machine"
+        Browser[🌐 Web Browser]
+    end
+
+    subgraph "Cloud Infrastructure"
+        subgraph "Streamlit Community Cloud"
+            style Streamlit Community Cloud fill:#f0f8ff,stroke:#333
+            FrontendService[
+                **Frontend Service**<br/>
+                Node: Python Process<br/>
+                Artifact: `app.py`
+            ]
+        end
+
+        subgraph "Railway"
+            style Railway fill:#e6e6fa,stroke:#333
+            BackendService[
+                **Backend Service**<br/>
+                Node: Docker Container<br/>
+                Artifact: `credlens-backend` image
+            ]
+        end
+
+        subgraph "Third-Party APIs"
+            style Third-Party APIs fill:#fafad2,stroke:#333
+            ExternalAPIs[
+                **External Services**<br/>
+                Yahoo Finance<br/>
+                FRED<br/>
+                NewsAPI
+            ]
+        end
+    end
+
+    Browser -- "HTTPS" --> FrontendService
+    FrontendService -- "REST API (HTTPS)" --> BackendService
+    BackendService -- "REST API (HTTPS)" --> ExternalAPIs
+```
++------------------+      +---------------------+      +----------------+
+|      User        | ---> |  Streamlit Frontend | <--> |  FastAPI Backend |
++------------------+      +---------------------+      +----------------+
+                                                           |
+                                     +---------------------+---------------------+
+                                     |                     |                     |
+                               +---------------+   +---------------+   +---------------+
+                               | Yahoo Finance |   |     FRED      |   |    NewsAPI    |
+                               +---------------+   +---------------+   +---------------+
+```
+
+
 
 ## ⚖️4. Key Architectural Decisions & Trade-offs
 
