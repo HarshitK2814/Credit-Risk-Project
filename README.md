@@ -121,10 +121,17 @@ Instructions:
 
 ## 🏆 Why CredLens Stands Out  
 
-✨ **Transparent & Explainable** → Analysts see *why*, not just *what*  
-✨ **Robust & Reliable** → Fundamentals-first ensures trustworthiness  
-✨ **Real-Time Insights** → Fresh data, no UI lag  
-✨ **Production-Ready** → Containerized, automated retraining, scalable  
+✨ **Transparent & Explainable → From "Black Box" to Glass Box**  
+We don't just provide a score; we provide the reasoning. Using **SHAP** and a clear UI, analysts can instantly see the specific drivers — from market volatility to fundamental debt — that influenced the final number. This builds trust and transforms the platform from a simple predictor into a true intelligence tool.  
+
+✨ **Robust & Reliable → A "Fundamentals First" Architecture**  
+Our biggest innovation is our **two-part scoring system**. A stable, rule-based **Fundamental Score** acts as a powerful anchor, preventing the model from being fooled by irrational market hype or biased technical signals. This guarantees that a company with poor financial health can never receive a misleadingly high score — solving a critical flaw found in simpler models.  
+
+✨ **Real-Time Insights, Zero Latency → A Hybrid Training Model**  
+Our platform is built for the **now**. It provides **instantaneous scores** based on the latest available data, but intelligently queues up a **full model retraining in the background** using FastAPI's asynchronous tasks. This gives the user a **real-time experience without lag**, while ensuring the system's intelligence is constantly refreshed.  
+
+✨ **Production-Ready & Resilient → Built for the Real World**  
+The entire backend is **containerized with Docker** for reproducibility and deployed securely using environment variables. The system is resilient to failure, automatically falling back to a **heuristic assessment** if an ML model cannot be trained — ensuring the user always gets a useful insight.  
 
 ---
 
