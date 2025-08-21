@@ -140,43 +140,128 @@ The entire backend is **containerized with Docker** for reproducibility and depl
 
 ## 3. System Architecture & Design
 
-Our platform is built on a modern, decoupled, and scalable architecture. The following diagrams illustrate the key components, data flows, and operational logic that make CredLens a robust and intelligent system.
+CredLens is built on a modern, decoupled, and scalable architecture designed for real-time performance, resilience, and maintainability. The system is composed of two primary services: a Streamlit frontend for the user interface and a FastAPI backend for all data processing and machine learning logic.
 
-### System Architecture Diagram
+### High-Level Component Diagram (UML Style)
 
-This diagram provides a high-level overview of the core components and their relationships, showcasing the separation between the user-facing frontend, the intelligent backend, and external data services.
+This diagram illustrates the main software components and their dependencies.
 
 ```mermaid
 graph TD
-    %% --- Custom Styling ---
-    classDef userStyle fill:#2ECC71,stroke:#333,color:#fff
-    classDef frontendStyle fill:#3498DB,stroke:#333,color:#fff
-    classDef backendStyle fill:#F39C12,stroke:#333,color:#fff
-    classDef apiStyle fill:#95A5A6,stroke:#333,color:#fff
-
-    %% --- Components ---
     subgraph "User Tier"
-        User["fa:fa-user Analyst"]:::userStyle
+        User[👤 Analyst]
     end
 
     subgraph "Frontend Tier (Streamlit Cloud)"
-        Frontend["fa:fa-window-maximize Streamlit Dashboard"]:::frontendStyle
+        Frontend[🌐 Streamlit Dashboard]
     end
 
     subgraph "Backend Tier (Docker on Railway)"
-        BackendAPI["fa:fa-server FastAPI Server"]:::backendStyle
-        ScoringEngine["fa:fa-cogs Scoring Engine"]:::backendStyle
-        DataFetcher["fa:fa-database Data Fetcher"]:::backendStyle
+        BackendAPI[🚀 FastAPI Server]
+        ScoringEngine[🧠 Scoring Engine]
+        DataFetcher[📡 Data Fetcher]
+        ModelStore[(💾 Model Storage)]
     end
 
     subgraph "External Services"
-        ExternalAPIs["fa:fa-cloud-download External APIs <br> (Yahoo Finance, FRED, NewsAPI)"]:::apiStyle
+        YFinanceAPI[Yahoo Finance API]
+        FRED_API[FRED API]
+        NewsAPI[NewsAPI]
     end
 
-    %% --- Connections ---
     User -- "Interacts" --> Frontend
-    Frontend -- "API Request (HTTPS)" --> BackendAPI
-    BackendAPI -- "Manages" --> DataFetcher
-    BackendAPI -- "Manages" --> ScoringEngine
-    DataFetcher -- "Fetches from" --> ExternalAPIs
+    Frontend -- "API Request (HTTP)" --> BackendAPI
+    BackendAPI -- "Uses" --> DataFetcher
+    BackendAPI -- "Uses" --> ScoringEngine
+    ScoringEngine -- "Loads/Saves Models" --> ModelStore
+    DataFetcher -- "Fetches Data" --> YFinanceAPI
+    DataFetcher -- "Fetches Data" --> FRED_API
+    DataFetcher -- "Fetches Data" --> NewsAPI
+```
 
+### Data Flow & Sequence Diagram (UML Style)
+
+This diagram shows the sequence of events for a typical user request, highlighting our real-time, non-blocking architecture.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant BackendAPI as FastAPI Backend
+    participant BackgroundTask as Async Retraining
+    participant ExternalAPIs as Data Sources
+
+    User->>Frontend: Enters Ticker & Clicks "Analyze"
+    Frontend->>BackendAPI: GET /api/v1/score/{ticker}
+    
+    activate BackendAPI
+    BackendAPI->>ExternalAPIs: Fetch all required data (YFinance, FRED, News)
+    ExternalAPIs-->>BackendAPI: Return fresh data
+    
+    BackendAPI->>BackendAPI: 1. Calculate Fundamental Score
+    BackendAPI->>BackendAPI: 2. Load pre-trained Technical Model
+    BackendAPI->>BackendAPI: 3. Calculate Technical Penalty
+    BackendAPI->>BackendAPI: 4. Compute Final Score & Explanation
+    
+    par
+        BackendAPI-->>Frontend: Return full JSON Response (Instant)
+        and
+        BackendAPI-->>BackgroundTask: Trigger Retraining Job
+    end
+    deactivate BackendAPI
+
+    activate Frontend
+    Frontend->>User: Display Gauges, Charts, and Insights
+    deactivate Frontend
+
+    activate BackgroundTask
+    BackgroundTask->>ExternalAPIs: Re-fetch all fresh data
+    ExternalAPIs-->>BackgroundTask: Return fresh data
+    BackgroundTask->>BackgroundTask: Run Optuna Tuning & Retrain Model
+    BackgroundTask->>BackgroundTask: Save new model to disk
+    deactivate BackgroundTask
+```
+
+### Deployment Diagram (UML Style)
+
+This diagram illustrates the physical (or virtual) nodes where each part of the application is hosted and how they communicate.
+
+```mermaid
+graph TD
+    subgraph "User's Local Machine"
+        Browser[🌐 Web Browser]
+    end
+
+    subgraph "Cloud Infrastructure"
+        subgraph "Streamlit Community Cloud"
+            style Streamlit Community Cloud fill:#f0f8ff,stroke:#333
+            FrontendService[
+                **Frontend Service**<br/>
+                Node: Python Process<br/>
+                Artifact: `app.py`
+            ]
+        end
+
+        subgraph "Railway"
+            style Railway fill:#e6e6fa,stroke:#333
+            BackendService[
+                **Backend Service**<br/>
+                Node: Docker Container<br/>
+                Artifact: `credlens-backend` image
+            ]
+        end
+
+        subgraph "Third-Party APIs"
+            style Third-Party APIs fill:#fafad2,stroke:#333
+            ExternalAPIs[
+                **External Services**<br/>
+                Yahoo Finance<br/>
+                FRED<br/>
+                NewsAPI
+            ]
+        end
+    end
+
+    Browser -- "HTTPS" --> FrontendService
+    FrontendService -- "REST API (HTTPS)" --> BackendService
+    BackendService -- "REST API (HTTPS)" --> ExternalAPIs
