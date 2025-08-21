@@ -1,4 +1,4 @@
-# 💳🔎 CredLens: A Real-Time, Explainable Credit Intelligence Platform
+# 💳🔎 **CredLens: A Real-Time, Explainable Credit Intelligence Platform**
 
 🚀 **CredTech Hackathon Submission**  
 
@@ -35,11 +35,11 @@ Instructions:
 ## ✨2. Key Features
 
 ✅ **Multi-Source Data Ingestion:** Ingests data from three distinct sources: **Yahoo Finance** (structured market/fundamental data), **FRED** (structured macroeconomic data), and **NewsAPI** (unstructured news headlines).
-*  ✅ **"Fundamentals First" Hybrid Scoring Model:** A unique two-part architecture that anchors a company's score in its fundamental financial health and then applies a penalty based on a sophisticated, AI-driven technical risk assessment.
-*  ✅ **Advanced Explainable AI (XAI):** Uses the industry-standard SHAP (SHapley Additive exPlanations) to provide clear, feature-level breakdowns of what drives each score, making the model's reasoning transparent.
-*  ✅ **Interactive & Polished Dashboard:** A fluid and intuitive Streamlit UI featuring interactive score gauges, a "Feature Deep Dive" explorer for historical trend analysis, and sentiment-highlighted news headlines.
-*  ✅ **Intelligent & Robust Fallbacks:** The system is fully resilient. It gracefully handles API failures and can produce a qualitative, rule-based **Heuristic Assessment** for stocks that cannot be scored by the ML model due to insufficient data.
-*  ✅ **Lightweight MLOps Pipeline:** The entire backend is containerized with **Docker** for perfect reproducibility. It includes an API endpoint to trigger automated background retraining of core models, ensuring the system's intelligence stays fresh without any downtime.
+✅ **"Fundamentals First" Hybrid Scoring Model:** A unique two-part architecture that anchors a company's score in its fundamental financial health and then applies a penalty based on a sophisticated, AI-driven technical risk assessment.
+✅ **Advanced Explainable AI (XAI):** Uses the industry-standard SHAP (SHapley Additive exPlanations) to provide clear, feature-level breakdowns of what drives each score, making the model's reasoning transparent.
+✅ **Interactive & Polished Dashboard:** A fluid and intuitive Streamlit UI featuring interactive score gauges, a "Feature Deep Dive" explorer for historical trend analysis, and sentiment-highlighted news headlines.
+✅ **Intelligent & Robust Fallbacks:** The system is fully resilient. It gracefully handles API failures and can produce a qualitative, rule-based **Heuristic Assessment** for stocks that cannot be scored by the ML model due to insufficient data.
+✅ **Lightweight MLOps Pipeline:** The entire backend is containerized with **Docker** for perfect reproducibility. It includes an API endpoint to trigger automated background retraining of core models, ensuring the system's intelligence stays fresh without any downtime.
 
 ## 🏗️3. System Architecture
 
@@ -121,10 +121,10 @@ Instructions:
 
 ## 🏆 Why CredLens Stands Out  
 
-- ✨ **Transparent & Explainable** → Analysts see *why*, not just *what*  
-- ✨ **Robust & Reliable** → Fundamentals-first ensures trustworthiness  
-- ✨ **Real-Time Insights** → Fresh data, no UI lag  
-- ✨ **Production-Ready** → Containerized, automated retraining, scalable  
+✨ **Transparent & Explainable** → Analysts see *why*, not just *what*  
+✨ **Robust & Reliable** → Fundamentals-first ensures trustworthiness  
+✨ **Real-Time Insights** → Fresh data, no UI lag  
+✨ **Production-Ready** → Containerized, automated retraining, scalable  
 
 ---
 
