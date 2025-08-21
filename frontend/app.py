@@ -71,7 +71,7 @@ st.markdown("""
 # Configurations & Helpers
 # -------------------------
 AGENCY_RATINGS = {"AAPL": "AA+", "MSFT": "AAA", "GOOGL": "AA+", "NVDA": "A-", "JPM": "A-", "TSLA": "BB+"}
-BACKEND_URL = "http://127.0.0.1:8000/api/v1/score"
+BACKEND_URL = "https://credit-risk-hackathon-production.up.railway.app/api/v1/score"
 
 def get_api_data(ticker: str):
     """Fetches analysis data from the backend API."""
