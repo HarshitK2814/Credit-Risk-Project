@@ -138,59 +138,42 @@ The entire backend is **containerized with Docker** for reproducibility and depl
 🔥 **CredLens is not just another score generator — it’s the future of explainable, real-time credit intelligence.**  
 
 
-## ⚙️ 3. System Architecture & Design  
+### System Architecture & Data Flow
 
-CredLens is built on a **modern, decoupled, and scalable architecture** designed for:  
-✅ Real-time performance  
-✅ High resilience  
-✅ Easy maintainability  
-
-It has **two core services**:  
-- 🎨 **Streamlit Frontend** → Interactive dashboard for analysts  
-- 🚀 **FastAPI Backend** → Data processing, ML scoring, and explainability  
-
----
-
-### 🏗️ High-Level Component Diagram  
-
-The following diagram shows the **main software components** and their dependencies:  
+This diagram illustrates the real-time, non-blocking data flow from the user's request to the final score generation and asynchronous model retraining.
 
 ```mermaid
-graph TD
-    %% User Tier
-    subgraph "👤 User Tier"
-        User[Analyst]
-    end
+sequenceDiagram
+    actor User
+    participant FE as Streamlit Frontend
+    participant API as FastAPI Backend
+    participant BG as Background Task
+    participant Data as External APIs
 
-    %% Frontend
-    subgraph "🌐 Frontend Tier (Streamlit Cloud)"
-        Frontend[Streamlit Dashboard]
-    end
+    User->>FE: Enters Ticker (e.g., "AAPL")
+    FE->>API: GET /score/AAPL
 
-    %% Backend
-    subgraph "🚀 Backend Tier (Docker on Railway)"
-        BackendAPI[FastAPI Server]
-        ScoringEngine[🧠 Scoring Engine]
-        DataFetcher[📡 Data Fetcher]
-        ModelStore[(💾 Model Storage)]
-    end
+    activate API
+    API->>Data: Fetch Yahoo Finance, FRED, News
+    Data-->>API: Return Fresh Data
 
-    %% External Services
-    subgraph "🌍 External Services"
-        YFinanceAPI[📈 Yahoo Finance API]
-        FRED_API[🏦 FRED API]
-        NewsAPI[📰 News API]
+    API->>API: 1. Calc Fundamental Score<br/>2. Load Technical Model<br/>3. Calc Final Score
+    
+    par
+        API-->>FE: Return Score & Explanation (Instant)
+        and
+        API-->>BG: Start Background Retraining
     end
+    deactivate API
 
-    %% Connections
-    User -->|Interacts| Frontend
-    Frontend -->|API Request (HTTP)| BackendAPI
-    BackendAPI -->|Uses| DataFetcher
-    BackendAPI -->|Uses| ScoringEngine
-    ScoringEngine -->|Loads / Saves Models| ModelStore
-    DataFetcher -->|Fetches| YFinanceAPI
-    DataFetcher -->|Fetches| FRED_API
-    DataFetcher -->|Fetches| NewsAPI
+    activate FE
+    FE->>User: Display Interactive Dashboard
+    deactivate FE
+
+    activate BG
+    Note over BG: Retrains model with<br/>fresh data to ensure<br/>it's never stale.
+    BG->>BG: Run Optuna & Save New Model
+    deactivate BG
 
 
 ### Data Flow & Sequence Diagram (UML Style)
