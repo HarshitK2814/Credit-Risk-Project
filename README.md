@@ -180,3 +180,84 @@ graph TD
     BackendAPI -- "Manages" --> ScoringEngine
     DataFetcher -- "Fetches from" --> ExternalAPIs
 
+graph TD
+    %% --- Custom Styling ---
+    classDef inputStyle fill:#3498DB,stroke:#333,color:#fff
+    classDef processStyle fill:#2ECC71,stroke:#333,color:#fff
+    classDef modelStyle fill:#8E44AD,stroke:#333,color:#fff
+    classDef finalStyle fill:#E74C3C,stroke:#333,color:#fff
+
+    %% --- Flowchart ---
+    Start(("Ticker Request")):::inputStyle --> FundData["Fetch Fundamental Data <br> (Debt, P/E, Cash)"]
+    Start --> TechData["Fetch Market & News Data"]
+
+    FundData --> FundScore{"Calculate Fundamental Score <br> (0-100 Score)"}:::processStyle
+    
+    TechData --> TechModel["Load/Train Technical ML Model <br> (XGBoost + Optuna)"]:::modelStyle
+    TechModel --> TechRisk{"Predict Technical Risk Probability <br> (0.0 to 1.0)"}:::modelStyle
+    TechRisk --> TechPenalty["Convert to Technical Penalty <br> (0-50 Points)"]:::processStyle
+    
+    FundScore --> FinalCalc["Final Score = <br> Fundamental Score - Technical Penalty"]:::finalStyle
+    TechPenalty --> FinalCalc
+    
+    FinalCalc --> Output(("Final Stability Score")):::finalStyle
+
+graph TD
+    %% --- Custom Styling ---
+    classDef triggerStyle fill:#8E44AD,stroke:#333,color:#fff
+    classDef processStyle fill:#3498DB,stroke:#333,color:#fff
+    classDef successStyle fill:#2ECC71,stroke:#333,color:#fff
+
+    %% --- Flowchart ---
+    Trigger(("fa:fa-clock-o Start Retraining Job")):::triggerStyle --> Fetch["Fetch Fresh Data for Core Tickers <br> (AAPL, MSFT, etc.)"]
+    Fetch --> Engineer["Engineer All Features"]:::processStyle
+    Engineer --> Tune["Run Optuna Hyperparameter Tuning"]:::processStyle
+    Tune --> Train["Train a New, Optimized Model"]:::processStyle
+    Train --> Save["Overwrite Old .joblib File <br> with New Model"]:::processStyle
+    Save --> End(("fa:fa-check-circle Job Complete")):::successStyle
+
+graph TD
+    %% --- Custom Styling ---
+    classDef userStyle fill:#2ECC71,stroke:#333,color:#fff
+    classDef cloudStyle fill:#ECF0F1,stroke:#bdc3c7
+    classDef containerStyle fill:#3498DB,stroke:#2980B9,color:#fff
+    classDef serviceStyle fill:#9B59B6,stroke:#8E44AD,color:#fff
+
+    %% --- Diagram ---
+    subgraph "User's Local Machine"
+        Browser["fa:fa-globe Browser"]:::userStyle
+    end
+
+    subgraph "Cloud Infrastructure"
+        subgraph "Streamlit Community Cloud"
+            style Streamlit Community Cloud fill:#f0f8ff,stroke:#333,stroke-dasharray: 5 5
+            Frontend[
+                "**Streamlit Frontend Service**<br/>
+                Node: Python Process<br/>
+                Artifact: `app.py`"
+            ]:::serviceStyle
+        end
+
+        subgraph "Railway"
+            style Railway fill:#e6e6fa,stroke:#333,stroke-dasharray: 5 5
+            Backend[
+                "**FastAPI Backend Service**<br/>
+                Node: fa:fa-docker Docker Container<br/>
+                Artifact: `credlens-backend` image"
+            ]:::containerStyle
+        end
+    end
+    
+    subgraph "Third-Party APIs"
+         ExternalAPIs[
+            "**External Services**<br/>
+            Yahoo Finance<br/>
+            FRED<br/>
+            NewsAPI"
+        ]
+    end
+
+    Browser -- "HTTPS" --> Frontend
+    Frontend -- "REST API (HTTPS)" --> Backend
+    Backend -- "REST API (HTTPS)" --> ExternalAPIs
+
