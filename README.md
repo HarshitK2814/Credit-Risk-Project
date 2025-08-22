@@ -30,11 +30,11 @@ Instructions:
 3. Replace this entire block with the generated image link.
 ======================================================================
 -->
-
+<!--
 **CredLens Dashboard**
 
 <img width="1715" height="786" alt="Screenshot 2025-08-22 084420" src="https://github.com/user-attachments/assets/7675c001-be71-499f-bea6-f3a556107270" />
-
+-->
 # 📊 CredLens Dashboard
 
 ![CredLens Dashboard](assets/images/dashboard.png)
