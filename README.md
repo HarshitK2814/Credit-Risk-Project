@@ -200,7 +200,7 @@ Instructions:
 
 ![](assets/images/Smc2.png)
 
-![](assets/images/Smc2.png)
+![](assets/images/Smc3.png)
 
 As the chart above proves, our platform doesn't hide complexity—it reveals it:
 
