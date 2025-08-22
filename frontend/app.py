@@ -9,13 +9,13 @@ import plotly.express as px
 st.set_page_config(page_title="CredLens", page_icon="🤖", layout="wide")
 
 # -------------------------
-# Hide Streamlit default UI elements (menu, deploy, footer)
+# Hide Streamlit default UI elements (menu and footer)
 # -------------------------
+# We REMOVED "header {visibility: hidden;}" to make the mobile button work.
 hide_streamlit_style = """
     <style>
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-    header {visibility: hidden;}
     </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -28,7 +28,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------
-# Custom CSS
+# Custom CSS for App Styling
 # -------------------------
 st.markdown("""
     <style>
@@ -84,7 +84,7 @@ def get_api_data(ticker: str):
     """Fetches analysis data from the backend API."""
     try:
         response = requests.get(f"{BACKEND_URL}/{ticker}")
-        response.raise_for_status() 
+        response.raise_for_status()
         return response.json()
 
     except requests.exceptions.HTTPError as err:
@@ -114,7 +114,7 @@ def format_market_cap(mc):
     return str(mc)
 
 # -------------------------
-# Main UI Layout and the rest of the file is unchanged...
+# Main UI Layout
 # -------------------------
 st.markdown("""
     <div style="display: flex; align-items: center; margin-bottom: 1em;">
@@ -132,6 +132,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
+# --- This is the Python code that creates the sidebar ---
 st.sidebar.header("Analysis Options")
 ticker_input = st.sidebar.text_input("Enter Company Ticker", value="SMCI").upper()
 analyze_button = st.sidebar.button("Analyze Creditworthiness", type="primary")
@@ -148,9 +149,9 @@ if analyze_button:
             score_result = api_data['score_result']
             info = api_data.get('company_info', {})
             company_name = api_data.get('company_name', ticker_input)
-            
+
             plotly_template = 'plotly_white'
-            
+
             st.header(f"Analysis for {company_name}")
 
             score = score_result.get('stability_score', 0)
@@ -161,16 +162,16 @@ if analyze_button:
                     st.warning("⚠ Neutral: Some factors indicate potential risk.")
                 else:
                     st.error("🚨 Volatile: Significant downside risk detected.")
-            
+
             col1, col2, col3, col4, col5 = st.columns(5)
-            
+
             with col1:
                 if score_result.get('assessment_type') == 'Heuristic':
                     st.metric("Stability Score", score_result['stability_score'], "Heuristic")
                 else:
                     outlook = 'Stable' if score > 75 else 'Neutral' if score > 50 else 'Volatile'
                     st.metric("Stability Score", score, f"{outlook} Outlook")
-            
+
             with col2:
                 sentiment = score_result.get('latest_sentiment', 0.0)
                 sentiment_text = "Positive" if sentiment > 0.05 else "Negative" if sentiment < -0.05 else "Neutral"
@@ -230,9 +231,9 @@ if analyze_button:
                 )
                 fig_stock_chart.update_layout(height=400)
                 st.plotly_chart(fig_stock_chart, use_container_width=True)
-            
+
             st.markdown("---")
-            
+
             news = api_data.get('recent_news_for_context')
             if news:
                 st.subheader("Recent News Headlines")
