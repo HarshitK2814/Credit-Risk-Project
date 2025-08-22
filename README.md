@@ -9,9 +9,9 @@
 - Harshit Kumawat  
 - Shashank Shekhar  
 
-🔗 **Live Demo URL:** `[YOUR DEPLOYED FRONTEND URL HERE]`  
-🔗 **Live Backend API:** `[YOUR DEPLOYED BACKEND URL HERE]`  
+🔗 **Live Demo URL:** [CredLens Dashboard](https://credit-risk-hackathon-as8njuu3bdu5gapkh5v457.streamlit.app)
 
+🔗 **Live Backend API:** [CredLens API](https://credit-risk-hackathon-production.up.railway.app/api/v1/sco)
 
 ---
 
@@ -30,7 +30,10 @@ Instructions:
 3. Replace this entire block with the generated image link.
 ======================================================================
 -->
-![CredLens Dashboard](https://i.imgur.com/your-main-screenshot-url.png)
+
+**CredLens Dashboard**
+
+<img width="1715" height="786" alt="Screenshot 2025-08-22 084420" src="https://github.com/user-attachments/assets/7675c001-be71-499f-bea6-f3a556107270" />
 
 ## ✨2. Key Features
 
@@ -41,29 +44,48 @@ Instructions:
 * ✅ **Intelligent & Robust Fallbacks:** The system is fully resilient. It gracefully handles API failures and can produce a qualitative, rule-based **Heuristic Assessment** for stocks that cannot be scored by the ML model due to insufficient data.
 * ✅ **Lightweight MLOps Pipeline:** The entire backend is containerized with **Docker** for perfect reproducibility. It includes an API endpoint to trigger automated background retraining of core models, ensuring the system's intelligence stays fresh without any downtime.
 
-## 3. System Architecture & Design
+
+## ⚙️3. System Architecture
 
 CredLens is built on a modern, decoupled, and scalable architecture designed for real-time performance, resilience, and maintainability. The system is composed of two primary services: a Streamlit frontend for the user interface and a FastAPI backend for all data processing and machine learning logic.
 
-### High-Level Component Diagram (UML Style)
+* 🎨 **Frontend:** A responsive dashboard built with **Streamlit** and deployed on Streamlit Community Cloud.
+* 🚀 **Backend:** A high-performance API server built with **FastAPI** and deployed as a Docker container on Railway.
+* 🧠 **ML Engine:** Uses **XGBoost** for the specialized technical model and **Optuna** for efficient, intelligent hyperparameter optimization.
+```
++------------------+      +---------------------+      +----------------+
+|   👤 User       | ---> |🌐Streamlit Frontend| <--> |🚀FastAPI Backend|
++------------------+      +---------------------+      +----------------+
+                                                           |
+                                     +---------------------+---------------------+
+                                     |                     |                     |
+                               +---------------+   +---------------+   +---------------+
+                               |📈Yahoo Finance |   |  🏛️ FRED      |   |  📰 NewsAPI    |
+                               +---------------+   +---------------+   +---------------+
+```
 
-This diagram illustrates the main software components and their dependencies.
+
+---
+
+### 🗂️ High-Level Component Diagram (UML Style)  
+
+This diagram illustrates the main software components and their dependencies.  
 
 ```mermaid
 graph TD
     subgraph "User Tier"
-        User[👤 Analyst]
+        User[Analyst]
     end
 
     subgraph "Frontend Tier (Streamlit Cloud)"
-        Frontend[🌐 Streamlit Dashboard]
+        Frontend[Streamlit Dashboard]
     end
 
     subgraph "Backend Tier (Docker on Railway)"
-        BackendAPI[🚀 FastAPI Server]
-        ScoringEngine[🧠 Scoring Engine]
-        DataFetcher[📡 Data Fetcher]
-        ModelStore[(💾 Model Storage)]
+        BackendAPI[FastAPI Server]
+        ScoringEngine[Scoring Engine]
+        DataFetcher[Data Fetcher]
+        ModelStore[(Model Storage)]
     end
 
     subgraph "External Services"
@@ -81,106 +103,44 @@ graph TD
     DataFetcher -- "Fetches Data" --> FRED_API
     DataFetcher -- "Fetches Data" --> NewsAPI
 ```
+### 🔄 Data Flow & Sequence Diagram (UML Style)
 
-### Data Flow & Sequence Diagram (UML Style)
-
-This diagram shows the sequence of events for a typical user request, highlighting our real-time, non-blocking architecture.
+This diagram shows the sequence of events for a typical user request, highlighting our **real-time, non-blocking architecture**.
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant Frontend
-    participant BackendAPI as FastAPI Backend
-    participant BackgroundTask as Async Retraining
-    participant ExternalAPIs as Data Sources
+    %% Participants
+    participant User as 👤 User
+    participant Frontend as 🌐 Frontend (Streamlit)
+    participant Backend as 🚀 Backend (FastAPI)
+    participant AsyncJob as 🔧 Background Retraining
+    participant External as 🌍 External APIs
 
+    %% User initiates request
     User->>Frontend: Enters Ticker & Clicks "Analyze"
-    Frontend->>BackendAPI: GET /api/v1/score/{ticker}
-    
-    activate BackendAPI
-    BackendAPI->>ExternalAPIs: Fetch all required data (YFinance, FRED, News)
-    ExternalAPIs-->>BackendAPI: Return fresh data
-    
-    BackendAPI->>BackendAPI: 1. Calculate Fundamental Score
-    BackendAPI->>BackendAPI: 2. Load pre-trained Technical Model
-    BackendAPI->>BackendAPI: 3. Calculate Technical Penalty
-    BackendAPI->>BackendAPI: 4. Compute Final Score & Explanation
-    
-    par
-        BackendAPI-->>Frontend: Return full JSON Response (Instant)
-        and
-        BackendAPI-->>BackgroundTask: Trigger Retraining Job
-    end
-    deactivate BackendAPI
+    Frontend->>Backend: Request Score (API)
 
+    activate Backend
+    Backend->>External: Fetch Market + News Data
+    External-->>Backend: Return Fresh Data
+
+    Backend->>Backend: Process Data & Compute Score
+    Backend-->>Frontend: Respond with Score + Insights
+    Backend-->>AsyncJob: Trigger Background Retraining
+    deactivate Backend
+
+    %% Frontend response
     activate Frontend
-    Frontend->>User: Display Gauges, Charts, and Insights
+    Frontend->>User: Display Charts, Gauges & Insights
     deactivate Frontend
 
-    activate BackgroundTask
-    BackgroundTask->>ExternalAPIs: Re-fetch all fresh data
-    ExternalAPIs-->>BackgroundTask: Return fresh data
-    BackgroundTask->>BackgroundTask: Run Optuna Tuning & Retrain Model
-    BackgroundTask->>BackgroundTask: Save new model to disk
-    deactivate BackgroundTask
+    %% Background async job
+    activate AsyncJob
+    AsyncJob->>External: Fetch Full Data
+    External-->>AsyncJob: Return Data
+    AsyncJob->>AsyncJob: Retrain Model + Save
+    deactivate AsyncJob
 ```
-
-### Deployment Diagram (UML Style)
-
-This diagram illustrates the physical (or virtual) nodes where each part of the application is hosted and how they communicate.
-
-```mermaid
-graph TD
-    subgraph "User's Local Machine"
-        Browser[🌐 Web Browser]
-    end
-
-    subgraph "Cloud Infrastructure"
-        subgraph "Streamlit Community Cloud"
-            style Streamlit Community Cloud fill:#f0f8ff,stroke:#333
-            FrontendService[
-                **Frontend Service**<br/>
-                Node: Python Process<br/>
-                Artifact: `app.py`
-            ]
-        end
-
-        subgraph "Railway"
-            style Railway fill:#e6e6fa,stroke:#333
-            BackendService[
-                **Backend Service**<br/>
-                Node: Docker Container<br/>
-                Artifact: `credlens-backend` image
-            ]
-        end
-
-        subgraph "Third-Party APIs"
-            style Third-Party APIs fill:#fafad2,stroke:#333
-            ExternalAPIs[
-                **External Services**<br/>
-                Yahoo Finance<br/>
-                FRED<br/>
-                NewsAPI
-            ]
-        end
-    end
-
-    Browser -- "HTTPS" --> FrontendService
-    FrontendService -- "REST API (HTTPS)" --> BackendService
-    BackendService -- "REST API (HTTPS)" --> ExternalAPIs
-```
-+------------------+      +---------------------+      +----------------+
-|      User        | ---> |  Streamlit Frontend | <--> |  FastAPI Backend |
-+------------------+      +---------------------+      +----------------+
-                                                           |
-                                     +---------------------+---------------------+
-                                     |                     |                     |
-                               +---------------+   +---------------+   +---------------+
-                               | Yahoo Finance |   |     FRED      |   |    NewsAPI    |
-                               +---------------+   +---------------+   +---------------+
-```
-
-
 
 ## ⚖️4. Key Architectural Decisions & Trade-offs
 
@@ -196,22 +156,54 @@ This project's final architecture is the result of solving several complex, real
 *   **Decision:** We implemented a **hybrid training architecture** using FastAPI's `BackgroundTasks`. The user receives an instant score based on the latest data applied to a pre-trained model. In the background, an asynchronous task is triggered to retrain the model with that new data.
 *   **Outcome:** The UI is instantaneous, while the model's intelligence is continuously updated, providing the best of both worlds.
 
+
 ## 📊5. Model Performance & Explainability
 
-Our model's goal is to predict periods of future negative returns combined with high volatility. We use a holdout test set and achieve realistic, powerful AUC scores. For example, for a stock like **NVDA**, the model achieved a **Final Test Set AUC Score of ~0.91**.
+Accuracy is only half the story. The core challenge of the hackathon was to replace the "black box" with a transparent, evidence-backed system that analysts can trust. Our platform is built from the ground up to achieve this.
 
-The platform's core strength is its explainability, which allows an analyst to understand the reasoning behind any score.
+### Model Accuracy & Robust Validation
+
+Our model's goal is to predict periods of **future instability**, which we define as a combination of negative returns and high volatility. To ensure our model is genuinely predictive and not simply lucky, we employ a robust validation strategy:
+
+1.  **Holdout Test Set:** For each ticker, the historical data is split. 80% is used for training, and the final 20% is held back as a completely unseen test set to measure true performance.
+2.  **Intelligent Tuning:** We use **Optuna** for efficient hyperparameter optimization, allowing us to find the best-performing model configuration for each stock's unique historical patterns.
+3.  **Realistic Metrics:** The model's performance is measured by the **AUC (Area Under the Curve)** score on the holdout test set. This metric tells us how well the model can distinguish between stable and unstable future periods.
+    *   For a stable, well-documented stock like **NVDA**, our model achieved a **Final Test Set AUC Score of ~0.9619**, demonstrating high predictive accuracy.
+    *   For a more volatile and fundamentally complex stock like **SMCI**, the model achieved a more realistic but still powerful **AUC Score of ~0.9653**. This score confirms the model has genuine predictive power without the artificially high results often caused by model bias.
+
+### The Power of Explainability (Our Core Innovation)
+
+A score is meaningless without context. Our platform's greatest strength is its ability to make the AI's reasoning transparent. We use **SHAP (SHapley Additive exPlanations)**, the industry-standard for XAI, to generate the "Why this score?" chart.
+
+This feature was not just a design choice; it was our **most critical debugging tool**. Initially, our models produced illogical high scores for risky stocks. By analyzing the SHAP charts, we diagnosed a critical "mean-reversion bias" and re-architected our system to be **"Fundamentals First."**
+
+The result is a model that now correctly balances competing factors, as seen in the analysis for **Super Micro Computer (SMCI)**:
 
 <!-- 
 ======================================================================
-!!! REPLACE THIS COMMENT WITH YOUR "WHY THIS SCORE?" SCREENSHOT !!!
+!!! REPLACE THIS COMMENT WITH YOUR FINAL, CORRECT 'SMCI' SCREENSHOT !!!
 Instructions:
-1. Take a screenshot of the Key Drivers chart for a stock like BA or SMCI.
-2. Drag and drop the image into this README file on GitHub.
-3. Replace this entire block with the generated image link.
+1. Run the app and analyze the 'SMCI' ticker.
+2. Take a screenshot showing the low/neutral score and the Key Drivers chart.
+3. Drag and drop the image into this README file on GitHub.
+4. Replace this entire block with the generated image link.
 ======================================================================
 -->
-![Explanation Chart](https://i.imgur.com/your-explanation-screenshot-url.png)
+**Explanation Chart for SMCI**
+
+<img width="1898" height="529" alt="Screenshot 2025-08-22 004324" src="https://github.com/user-attachments/assets/abc6eb56-b3db-4e98-9bcd-0664f1feb4ff" />
+
+<img width="1892" height="647" alt="Screenshot 2025-08-22 004354" src="https://github.com/user-attachments/assets/701ae835-8475-4cab-b7a3-5d9e69417f0d" />
+
+<img width="1882" height="679" alt="Screenshot 2025-08-22 004413" src="https://github.com/user-attachments/assets/0963b5a7-1962-4588-96c3-4fc69699d0d8" />
+
+As the chart above proves, our platform doesn't hide complexity—it reveals it:
+
+*   **The Anchor of Risk (Red Bar):** The model correctly identifies that the company's **`Debt-to-Equity`** ratio is the single largest factor *increasing* its risk profile. This is our fundamental handbrake in action.
+*   **The Market's Opinion (Green Bars):** The model also shows that technical factors like `volatility_90d` and `rsi_14d` are currently seen as *decreasing* the risk, likely due to an "oversold" condition.
+
+An analyst can now instantly understand the nuanced story: the company has fundamental weaknesses, but its recent market behavior suggests short-term stability. This transforms the model from a black box into a sophisticated tool for thought, perfectly fulfilling the core challenge of the hackathon.
+
 
 ## ⚙️6. How to Run Locally
 
@@ -240,6 +232,7 @@ Instructions:
 
 5️⃣  Open your browser to the local Streamlit URL 👉 (usually `http://localhost:8501`).
 
+
 ## 🏆 Why CredLens Stands Out  
 
 ✨ **Transparent & Explainable → From "Black Box" to Glass Box**  
@@ -257,7 +250,6 @@ The entire backend is **containerized with Docker** for reproducibility and depl
 ---
 
 🔥 **CredLens is not just another score generator — it’s the future of explainable, real-time credit intelligence.**  
-
 
 
 
