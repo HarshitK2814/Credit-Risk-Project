@@ -75,7 +75,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------
-# Configurations & Helpers
+# Configurations & Helper
 # -------------------------
 AGENCY_RATINGS = {"AAPL": "AA+", "MSFT": "AAA", "GOOGL": "AA+", "NVDA": "A-", "JPM": "A-", "TSLA": "BB+"}
 BACKEND_URL = "https://credit-risk-hackathon-production.up.railway.app/api/v1/score"
@@ -243,11 +243,12 @@ if analyze_button:
 else:
     st.info("Enter a ticker in the sidebar and click 'Analyze' to begin.")
 
-# -------------------------
+# ------------------------
 # Custom Footer
-# -------------------------
+# ------------------------
 st.markdown("""
     <div style='text-align: center; color: gray; font-size: 14px; margin-top: 30px;'>
         © 2025 CredLens | Hackathon Prototype
     </div>
 """, unsafe_allow_html=True)
+
