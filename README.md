@@ -1,10 +1,9 @@
 # 💳🔎 **CredLens: A Real-Time, Explainable Credit Intelligence Platform**
 
-🚀 **CredTech Hackathon Submission**  
 
 👥 **Team Name:** Risk Raiders  
 
-👨‍💻 **Team Members:**  
+👨‍💻 **Members:**  
 - Harshit Kumar  
 - Harshit Kumawat  
 - Shashank Shekhar  
