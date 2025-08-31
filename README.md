@@ -1,7 +1,6 @@
 # 💳🔎 **CredLens: A Real-Time, Explainable Credit Intelligence Platform**
 
-
-👥 **Team Name:** Risk Raiders  
+ 
 
 👨‍💻 **Members:**  
 - Harshit Kumar  
